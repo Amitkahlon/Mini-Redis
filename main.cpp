@@ -1,6 +1,9 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string>
+#include <cstring>
+#include <unistd.h>
 
 int main()
 {
@@ -12,7 +15,39 @@ int main()
     }
 
     sockaddr_in address;
-    address.
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(6379);
 
-        return 0;
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    {
+        std::cerr << "Bind failed!" << std::endl;
+        return -1;
+    }
+
+    if (listen(server_fd, 3) < 0)
+    {
+        std::cerr << "Listen failed!" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Waiting for a connection on port 6379..." << std::endl;
+
+    sockaddr_in client_address;
+    socklen_t client_addr_len = sizeof(client_address);
+    int client_fd = accept(server_fd, (struct sockaddr *)&client_address, &client_addr_len);
+    if (client_fd < 0)
+    {
+        std::cout << "Client connected!" << std::endl;
+    }
+
+    char buffer[1024] = {0};
+
+    int bytes_read = read(client_fd, buffer, sizeof(buffer));
+    std::cout << "Received: " << buffer << std::endl;
+
+    std::string response = "OK\n";
+    send(client_fd, response.c_str(), response.length(), 0);
+
+    return 0;
 }
